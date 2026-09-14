@@ -1,0 +1,24 @@
+---
+/**
+ * Section heading in the hackutd style: big gradient display text beside a
+ * thin rule, alternating left/right alignment down the page.
+ */
+interface Props {
+  title: string;
+  align?: 'left' | 'right';
+}
+
+const { title, align = 'left' } = Astro.props;
+---
+
+<div
+  class:list={[
+    'mb-12 flex items-center gap-5 md:mb-14 md:gap-8',
+    align === 'right' && 'flex-row-reverse',
+  ]}
+>
+  <h2 class="grad-text shrink-0 pb-1 text-4xl font-extrabold tracking-tight md:text-5xl">
+    {title}
+  </h2>
+  <span class="h-px min-w-8 flex-1 bg-white/15" aria-hidden="true"></span>
+</div>

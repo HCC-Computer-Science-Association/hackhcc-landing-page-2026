@@ -1,0 +1,19 @@
+{
+  "name": "Code Runners",
+  "edition": "2026",
+  "ordinal": "01",
+  "status": "past",
+  "venue": "Houston City College",
+  "siteUrl": "https://coderunners.hackhcc.org",
+  "cover": "../../assets/editions/coderunners-logo.png",
+  "blurb": "The first HackHCC ever held: an official Major League Hacking member event that put 100+ hackers in one building at Houston City College for 24 straight hours. For most of them, it was their first hackathon.",
+  "mlhMember": true,
+  "stats": [
+    { "value": "100+", "label": "Hackers" },
+    { "value": "24", "label": "Hours" },
+    { "value": "28", "label": "Projects" },
+    { "value": "14", "label": "Sponsors" },
+    { "value": "01", "label": "Edition" }
+  ],
+  "order": 2026
+}

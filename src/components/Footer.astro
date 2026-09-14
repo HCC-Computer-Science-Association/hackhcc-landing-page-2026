@@ -1,0 +1,54 @@
+---
+/**
+ * Footer — the horizontal vivid gradient band (purple → magenta → orange;
+ * deepened stops so white text keeps contrast). Gradients were banned from
+ * the HERO only. No Open Source section anywhere, by decision.
+ */
+import { Image } from 'astro:assets';
+import { socials, contact } from '../data/site';
+import Icon from './Icon.astro';
+import csaLogo from '../assets/csa-white-logo.png';
+---
+
+<footer class="bg-gradient-to-r from-[#6d28d9] via-[#be185d] to-[#c2410c] text-white">
+  <div class="mx-auto flex max-w-6xl flex-col items-center gap-7 px-4 py-12 text-center md:py-14">
+    <div class="flex flex-col items-center gap-3 sm:flex-row">
+      <Image src={csaLogo} alt="Computer Science Association logo" width={240} class="h-10 w-auto" />
+      <p class="text-sm font-bold md:text-base">
+        &copy; 2026 HackHCC by the Computer Science Association at Houston City College
+      </p>
+    </div>
+
+    {/* Confirmed handles — same two as Support Us. */}
+    <ul class="flex items-center gap-5">
+      {
+        socials.map((s) => (
+          <li>
+            <a
+              href={s.href}
+              target="_blank"
+              rel="noopener noreferrer"
+              class="block text-white/85 transition hover:scale-110 hover:text-white"
+              aria-label={s.label}
+            >
+              <Icon name={s.icon} class="h-6 w-6" />
+            </a>
+          </li>
+        ))
+      }
+    </ul>
+
+    <p class="text-sm font-semibold">
+      Get in Touch: <a class="font-extrabold underline underline-offset-4 transition hover:opacity-80" href={`mailto:${contact.general}`}>{contact.general}</a>
+    </p>
+
+    <a
+      class="text-sm font-bold underline underline-offset-4 transition hover:opacity-80"
+      href="https://mlh.io/code-of-conduct"
+      target="_blank"
+      rel="noopener noreferrer"
+    >
+      MLH Code of Conduct
+    </a>
+  </div>
+</footer>

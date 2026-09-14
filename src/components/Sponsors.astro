@@ -1,0 +1,100 @@
+---
+/**
+ * Sponsors — hackutd's big rounded light-tinted panel with the original
+ * placeholder-style tiles, now filled with the real Code Runners 2026
+ * sponsors (14, in the edition site's tier order). One tile per sponsor,
+ * same tile style the open slots used; logos only, no intro copy.
+ *
+ * Google and Nexos render as text marks: Google has no logo asset on the
+ * edition site, and Nexos' only file is white-on-transparent (invisible on
+ * the light panel). Nexos links nowhere ("#"), exactly as the source.
+ */
+import { Image } from 'astro:assets';
+import type { ImageMetadata } from 'astro';
+import SectionHead from './SectionHead.astro';
+
+import itserve from '../assets/sponsors/itserve.png';
+import hcc from '../assets/sponsors/hcc.png';
+import datavox from '../assets/sponsors/datavox.png';
+import tanches from '../assets/sponsors/tanches.png';
+import att from '../assets/sponsors/att.png';
+import purebuttons from '../assets/sponsors/purebuttons.png';
+import gitbook from '../assets/sponsors/gitbook.png';
+import nordvpn from '../assets/sponsors/nordvpn.png';
+import nordpass from '../assets/sponsors/nordpass.png';
+import nordprotect from '../assets/sponsors/nordprotect.png';
+import incogni from '../assets/sponsors/incogni.png';
+import saily from '../assets/sponsors/saily.png';
+
+interface Sponsor {
+  name: string;
+  url: string;
+  logo?: ImageMetadata;
+  textOnly?: boolean;
+}
+
+const sponsors: Sponsor[] = [
+  { name: 'ITServe', logo: itserve, url: 'https://www.itserve.org/' },
+  {
+    name: 'HCC',
+    logo: hcc,
+    url: 'https://www.hccs.edu/community--partners/entrepreneurial-initiatives/center-for-entrepreneurship---southwest/',
+  },
+  { name: 'Google', url: 'https://google.com', textOnly: true },
+  { name: 'DataVox', logo: datavox, url: 'https://www.datavox.net/' },
+  { name: 'Tanches', logo: tanches, url: 'https://tanches.com/' },
+  { name: 'AT&T', logo: att, url: 'https://www.att.com/' },
+  { name: 'PureButtons', logo: purebuttons, url: 'https://www.purebuttons.com/' },
+  { name: 'GitBook', logo: gitbook, url: 'https://www.gitbook.com/' },
+  { name: 'NordVPN', logo: nordvpn, url: 'https://nordvpn.com/' },
+  { name: 'NordPass', logo: nordpass, url: 'https://nordpass.com/' },
+  { name: 'NordProtect', logo: nordprotect, url: 'https://nordprotect.com/' },
+  { name: 'Incogni', logo: incogni, url: 'https://incogni.com/' },
+  { name: 'Saily', logo: saily, url: 'https://saily.com/' },
+  { name: 'Nexos', url: '#', textOnly: true },
+];
+---
+
+<section id="sponsors" class="scroll-mt-20">
+  <div class="mx-auto max-w-6xl px-4 pb-28 pt-24 md:pb-36 md:pt-32">
+    <SectionHead title="Sponsors" align="left" />
+
+    <div
+      class="rounded-3xl bg-[#efeaf6] p-6 text-[#191227] shadow-[0_40px_120px_-40px_rgba(139,92,246,0.35)] md:p-12"
+    >
+      <ul class="grid grid-cols-2 gap-4 sm:grid-cols-3 md:gap-5">
+        {
+          sponsors.map((s) => (
+            <li
+              class="flex aspect-[5/3] items-center justify-center rounded-xl border-2 border-dashed border-black/15 bg-black/[0.05]"
+              title={s.name}
+            >
+              <a
+                href={s.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                class="flex h-full w-full items-center justify-center p-4 transition hover:opacity-75"
+                aria-label={s.name}
+              >
+                {s.textOnly ? (
+                  <span class="text-lg font-extrabold tracking-wide text-[#191227] md:text-2xl">
+                    {s.name}
+                  </span>
+                ) : (
+                  s.logo && (
+                    <Image
+                      src={s.logo}
+                      alt={s.name}
+                      width={Math.min(s.logo.width, 640)}
+                      class="max-h-[62%] w-auto max-w-[75%] object-contain"
+                    />
+                  )
+                )}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </div>
+  </div>
+</section>

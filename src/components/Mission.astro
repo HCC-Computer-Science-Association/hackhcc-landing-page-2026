@@ -1,0 +1,47 @@
+---
+/**
+ * Our Mission — photo left, prose right, accent-highlighted keywords,
+ * underlined "More about us" link (hackutd-style split).
+ *
+ * The photo is real Code Runners photography: the officers and judges on
+ * stage at the 2026 closing ceremony.
+ *
+ * PLACEHOLDER: the "More about us" href stays `#` until an about page exists.
+ */
+import { Image } from 'astro:assets';
+import SectionHead from './SectionHead.astro';
+import officersPhoto from '../assets/editions/hackHCC-officers.jpeg';
+---
+
+<section id="mission" class="scroll-mt-20">
+  <div class="mx-auto max-w-6xl px-4 py-24 md:py-32">
+    <SectionHead title="Our Mission" align="left" />
+    <div class="grid items-center gap-10 md:grid-cols-2 md:gap-16">
+      <Image
+        src={officersPhoto}
+        alt="HackHCC officers and judges lined up on stage at the Code Runners 2026 closing ceremony"
+        widths={[480, 960, 1440]}
+        sizes="(min-width: 768px) 44vw, 92vw"
+        class="aspect-[4/3] w-full rounded-2xl border border-white/10 object-cover"
+      />
+
+      <div>
+        {/* Kept as single source lines: Astro collapses newline whitespace around inline elements. */}
+        <p class="text-lg leading-relaxed text-dim md:text-xl">
+          HackHCC is Houston City College's own <b class="font-bold text-accent">24-hour</b> hackathon, run by students in the Computer Science Association. For one day and one night, hackers team up, pick a <b class="font-bold text-accent">challenge</b>, and build something real, with <b class="font-bold text-accent">free food and merch</b> keeping everyone going and <b class="font-bold text-accent">games</b> filling the gaps between sprints.
+        </p>
+        <p class="mt-5 text-lg leading-relaxed text-dim md:text-xl">
+          You don't need experience to belong here. Our <b class="font-bold text-accent">workshops assume nothing</b>, and at our first event most of the room had never hacked before. <b class="font-bold text-accent">First-timers welcome</b> isn't a footnote for us. It's the point. If you're curious enough to show up, you're in: HackHCC is <b class="font-bold text-accent">open to everyone</b>.
+        </p>
+        {/* PLACEHOLDER href: point at the about page when one exists. */}
+        <a
+          href="#"
+          title="Placeholder: about page pending"
+          class="mt-8 inline-block text-base font-extrabold text-white underline decoration-accent decoration-2 underline-offset-[6px] transition hover:text-accent"
+        >
+          More about us
+        </a>
+      </div>
+    </div>
+  </div>
+</section>

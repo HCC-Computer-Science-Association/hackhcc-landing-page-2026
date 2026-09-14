@@ -1,0 +1,41 @@
+---
+/**
+ * Top navigation: centered anchor links over the hero (hackutd-style).
+ * No theme toggle — the site is dark-only by decision.
+ *
+ * PLACEHOLDER: no HackHCC logo artwork exists yet, so a literal bordered
+ * "HackHCC logo" text slot stands where a mark would sit. It sits at
+ * nav-LEFT (hackutd-style placement); the MLH Trust Badge owns the
+ * top-right corner. Swap the slot's contents for the real mark when it lands.
+ */
+import { anchors } from '../data/site';
+---
+
+<header class="absolute inset-x-0 top-0 z-40">
+  <div class="relative mx-auto max-w-7xl px-4">
+    <div
+      class="absolute left-4 top-5 rounded-lg border border-dashed border-white/30 bg-black/30 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white/65 backdrop-blur-sm"
+      title="Placeholder: logo artwork pending"
+    >
+      HackHCC logo
+    </div>
+    <nav aria-label="Page sections">
+      <ul
+        class="flex flex-wrap items-center justify-center gap-x-8 gap-y-1.5 px-2 pt-32 md:px-32 md:pt-8"
+      >
+        {
+          anchors.map((a) => (
+            <li>
+              <a
+                class="text-sm font-bold text-white/85 transition hover:text-accent"
+                href={`#${a.id}`}
+              >
+                {a.label}
+              </a>
+            </li>
+          ))
+        }
+      </ul>
+    </nav>
+  </div>
+</header>

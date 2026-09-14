@@ -1,0 +1,18 @@
+---
+/**
+ * The official MLH Trust Badge, hotlinked from MLH's asset host and linking
+ * to mlh.io — never copied into the repo, redrawn, or filtered. Fixed to the
+ * top-RIGHT corner; the HackHCC logo slot owns the top-left.
+ */
+import { mlh } from '../data/site';
+---
+
+<a
+  href={mlh.href}
+  target="_blank"
+  rel="noopener noreferrer"
+  class="fixed right-4 top-0 z-50 block w-16 md:right-7 md:w-24"
+  aria-label={mlh.alt}
+>
+  <img src={mlh.badgeSrc} alt={mlh.alt} class="w-full" loading="eager" />
+</a>

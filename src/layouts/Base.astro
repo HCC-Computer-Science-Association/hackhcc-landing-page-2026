@@ -1,0 +1,49 @@
+---
+import '../styles/global.css';
+import { site } from '../data/site';
+
+interface Props {
+  title?: string;
+  description?: string;
+}
+
+const {
+  title = `${site.name} | ${site.tagline.replace(/\.$/, '')}`,
+  description = site.description,
+} = Astro.props;
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="theme-color" content="#0a0812" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={site.url} />
+    <link
+      rel="preload"
+      href="/fonts/manrope-v20-latin-regular.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link
+      rel="preload"
+      href="/fonts/manrope-v20-latin-800.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
+    <link rel="canonical" href={site.url} />
+  </head>
+  <!-- Dark theme only — no toggle, by decision. -->
+  <body class="bg-ground font-sans text-ink antialiased">
+    <slot />
+  </body>
+</html>

@@ -1,0 +1,309 @@
+---
+/**
+ * Full-viewport hero. DELTA vs hackutd: no skyline art and no color-gradient
+ * background — the backdrop is a muted looping video segment behind a neutral
+ * BLACK scrim. Below the tagline sit the edition chip and the hackutd-style
+ * edition card (glowing logo tile + corner cursor) — both → Code Runners.
+ *
+ * Video source, in priority order:
+ *   1. `public/hero.mp4` (self-owned footage) → native <video>, checked at
+ *      build time. PREFER this once owned footage exists.
+ *   2. Otherwise the YouTube segment configured in `heroVideo` (site.ts),
+ *      played via the official IFrame Player API: muted, chromeless,
+ *      looping `startSeconds`→`endSeconds`.
+ *
+ * Fallbacks: with prefers-reduced-motion or without JS, no video mounts and
+ * the plain near-black poster ground stands.
+ */
+import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { Image } from 'astro:assets';
+import { site, heroVideo } from '../data/site';
+import Icon from './Icon.astro';
+import coverArt from '../assets/editions/coderunners-logo.png';
+import editionPreview from '../assets/editions/hackhcc-2026.png';
+
+const hasLocalVideo = fs.existsSync(
+  fileURLToPath(new URL('../../public/hero.mp4', import.meta.url)),
+);
+---
+
+<section id="top" class="relative flex min-h-svh items-center justify-center overflow-hidden bg-[#050309]">
+  {/* ---- Media layer (aria-hidden, pointer-events off, purely decorative) ---- */}
+  {
+    hasLocalVideo ? (
+      <video
+        class="hero-media pointer-events-none absolute inset-0 h-full w-full object-cover"
+        autoplay
+        muted
+        loop
+        playsinline
+        preload="metadata"
+        src={heroVideo.localHeroVideo}
+        aria-hidden="true"
+      />
+    ) : (
+      <div
+        id="hero-yt-wrap"
+        class="pointer-events-none absolute left-1/2 top-1/2 hidden -translate-x-1/2 -translate-y-1/2"
+        aria-hidden="true"
+        data-yt-id={heroVideo.youtubeId}
+        data-yt-start={heroVideo.startSeconds}
+        data-yt-end={heroVideo.endSeconds}
+      >
+        <div id="hero-yt-frame" />
+      </div>
+    )
+  }
+
+  {/* ---- Neutral black scrim for legibility (no colored gradients here) ---- */}
+  <div class="absolute inset-0 bg-black/55" aria-hidden="true"></div>
+  <div class="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-black/75 to-transparent" aria-hidden="true"></div>
+  <div class="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/75 to-transparent" aria-hidden="true"></div>
+
+  {/* ---- Foreground stack ---- */}
+  <div class="relative z-10 flex flex-col items-center px-4 pb-24 pt-44 text-center md:pt-36">
+    <p class="text-lg font-semibold tracking-wide text-white/90 md:text-xl">We are</p>
+    <h1
+      class="mt-1 text-[16.5vw] font-extrabold leading-none tracking-tight text-white md:text-9xl lg:text-[10.5rem]"
+      style="text-shadow: 0 4px 44px rgba(0,0,0,.6);"
+    >
+      HackHCC
+    </h1>
+    <p class="mt-5 max-w-2xl text-balance text-lg font-medium text-white/85 md:text-2xl">
+      {site.tagline}
+    </p>
+
+    {/* Featured-edition banner chip → the Code Runners subdomain */}
+    <a
+      href="https://coderunners.hackhcc.org"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="group mt-10 inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 py-2.5 pl-4 pr-5 backdrop-blur-md transition hover:border-white/45 hover:bg-white/15"
+    >
+      <Image src={coverArt} alt="" width={320} class="h-7 w-auto md:h-8" />
+      <span class="text-sm font-bold text-white md:text-[15px]">
+        Code Runners 2026: visit the first edition
+      </span>
+      <Icon
+        name="chevron-right"
+        class="h-4 w-4 shrink-0 text-white/70 transition group-hover:translate-x-0.5 group-hover:text-white"
+      />
+    </a>
+
+    {/*
+      Edition card, hackutd-style: the big glowing preview card linking to
+      the latest edition site, with a cursor glyph parked at its corner that
+      hides on hover (your own cursor takes its place). The cursor arrow is
+      drawn fresh as a path — no downloaded artwork.
+    */}
+    <a
+      href="https://coderunners.hackhcc.org"
+      target="_blank"
+      rel="noopener noreferrer"
+      class="edition-card mt-9"
+      aria-label="Open the Code Runners 2026 edition site"
+    >
+      <Image src={editionPreview} alt="" width={720} class="edition-card-logo" />
+      <svg class="edition-card-cursor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+        <path
+          d="M5 2.2 18.6 13.2l-6.3.9 3.5 7.2-3 1.4-3.4-7.2L5 19.8z"
+          fill="#fff"
+          stroke="#000"
+          stroke-width="1.5"
+          stroke-linejoin="round"
+          transform="rotate(-10 12 12)"
+        />
+      </svg>
+    </a>
+  </div>
+
+  {/* Bouncing scroll cue (still under prefers-reduced-motion) */}
+  <a
+    href="#mission"
+    class="absolute bottom-5 left-1/2 z-10 -translate-x-1/2 rounded-full p-2 text-white/80 transition hover:text-white motion-safe:animate-bounce"
+    aria-label="Scroll down to Our Mission"
+  >
+    <Icon name="chevron-down" class="h-8 w-8" />
+  </a>
+</section>
+
+<style is:global>
+  #hero-yt-wrap iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+  }
+
+  /* ---- Edition card (hackutd's glowing logo tile, rebuilt) ---- */
+  .edition-card {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 130px;
+    padding: 0.45rem;
+    border-radius: 35px;
+    background: #1a2132;
+    box-shadow: 0 4px 20px 3px rgba(91, 0, 71, 0.6);
+    transition:
+      box-shadow 0.4s,
+      transform 0.4s;
+    animation: edition-card-in 2s;
+  }
+  .edition-card:hover {
+    transform: translateY(2px);
+    box-shadow: 0 4px 10px 2px rgba(91, 0, 71, 0.6);
+  }
+  .edition-card-logo {
+    height: 100%;
+    width: auto;
+    border-radius: 28px;
+  }
+  .edition-card-cursor {
+    position: absolute;
+    right: -18px;
+    bottom: -14px;
+    height: 45%;
+    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
+    transition: opacity 0.2s;
+    animation: edition-cursor-in 2s;
+  }
+  .edition-card:hover .edition-card-cursor {
+    opacity: 0;
+  }
+  @keyframes edition-card-in {
+    0%,
+    50% {
+      opacity: 0;
+    }
+    100% {
+      opacity: 1;
+    }
+  }
+  @keyframes edition-cursor-in {
+    0%,
+    50% {
+      opacity: 0;
+      transform: translateY(-50px);
+    }
+    100% {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  @media (max-width: 767px) {
+    .edition-card {
+      height: 100px;
+      border-radius: 28px;
+    }
+    .edition-card-logo {
+      border-radius: 21px;
+    }
+    .edition-card-cursor {
+      right: -12px;
+      bottom: -10px;
+    }
+  }
+
+  /* Reduced motion: the native local video (if any) never shows either. */
+  @media (prefers-reduced-motion: reduce) {
+    .hero-media {
+      display: none;
+    }
+  }
+</style>
+
+<script>
+  /**
+   * Muted looping YouTube background via the official IFrame Player API.
+   * Mounts nothing under prefers-reduced-motion (poster ground stands), and
+   * with JS off this whole block never runs.
+   */
+  const wrap = document.getElementById('hero-yt-wrap');
+  if (wrap && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    const videoId = wrap.dataset.ytId ?? '';
+    const start = Number(wrap.dataset.ytStart ?? 0);
+    const end = Number(wrap.dataset.ytEnd ?? 0);
+    const section = wrap.closest('section');
+
+    // Oversize the 16:9 frame past the viewport so it covers like
+    // object-fit: cover, with margin to push YouTube's UI chrome offscreen.
+    const OVERSCAN = 1.32;
+    const size = () => {
+      const vw = section?.clientWidth ?? window.innerWidth;
+      const vh = section?.clientHeight ?? window.innerHeight;
+      let w: number;
+      let h: number;
+      if (vw / vh > 16 / 9) {
+        w = vw;
+        h = (vw * 9) / 16;
+      } else {
+        h = vh;
+        w = (vh * 16) / 9;
+      }
+      wrap.style.width = `${Math.ceil(w * OVERSCAN)}px`;
+      wrap.style.height = `${Math.ceil(h * OVERSCAN)}px`;
+    };
+    size();
+    window.addEventListener('resize', size);
+    wrap.classList.remove('hidden');
+
+    /**
+     * RESILIENCE: if the video is removed, made private, region-locked, or has
+     * embedding switched off, the iframe renders YouTube's own "Video
+     * unavailable" card — which would sit behind the hero copy. Retire the
+     * frame instead so the designed near-black poster ground stands, exactly
+     * as it does with JS off or under reduced motion.
+     *
+     * Driven by onError ONLY — never by a "hasn't played yet" timer. A muted
+     * autoplay legitimately sits at UNSTARTED for a long stretch (backgrounded
+     * tab, slow connection, deferred autoplay), and no timer can tell that
+     * apart from a dead video; guessing there strips a working hero. YouTube's
+     * own error codes say plainly when it is actually gone.
+     */
+    const retire = () => wrap.remove();
+
+    const w = window as any;
+    w.onYouTubeIframeAPIReady = () => {
+      new w.YT.Player('hero-yt-frame', {
+        width: '100%',
+        height: '100%',
+        videoId,
+        playerVars: {
+          autoplay: 1,
+          mute: 1,
+          controls: 0,
+          playsinline: 1,
+          rel: 0,
+          start,
+          end,
+          modestbranding: 1,
+          disablekb: 1,
+          iv_load_policy: 3,
+          fs: 0,
+        },
+        events: {
+          onReady: (e: any) => {
+            e.target.mute();
+            e.target.playVideo();
+          },
+          onStateChange: (e: any) => {
+            // Manual segment loop: `end` fires ENDED → seek back to `start`.
+            if (e.data === w.YT.PlayerState.ENDED) {
+              e.target.seekTo(start, true);
+              e.target.playVideo();
+            }
+          },
+          // 100 = gone · 101/150 = embedding disallowed · 2/5 = player fault.
+          onError: retire,
+        },
+      });
+    };
+
+    const tag = document.createElement('script');
+    tag.src = 'https://www.youtube.com/iframe_api';
+    tag.onerror = retire;
+    document.head.appendChild(tag);
+  }
+</script>

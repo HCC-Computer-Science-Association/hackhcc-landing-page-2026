@@ -1,0 +1,123 @@
+/*
+ * HackHCC — a layout study of hackutd.co rebuilt with HackHCC's own facts,
+ * copy, and assets. Dark theme ONLY (no toggle, by decision).
+ */
+@import 'tailwindcss';
+
+/* ---- Manrope, self-hosted (google-webfonts-helper, latin, woff2) -------- */
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('/fonts/manrope-v20-latin-regular.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('/fonts/manrope-v20-latin-500.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('/fonts/manrope-v20-latin-600.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('/fonts/manrope-v20-latin-700.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Manrope';
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url('/fonts/manrope-v20-latin-800.woff2') format('woff2');
+}
+
+/* ---- Design tokens ------------------------------------------------------ */
+@theme {
+  --font-sans: 'Manrope', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Near-black ground with a faint violet cast; panels one step up. */
+  --color-ground: #0a0812;
+  --color-panel: #151022;
+  --color-ink: #f6f3fb;
+  --color-dim: #b3a9cb;
+
+  /* The heading/CTA gradient family: purple → magenta → orange. */
+  --color-grape: #8b5cf6;
+  --color-magenta: #ec4899;
+  --color-ember: #f97316;
+
+  /* Accent used for highlighted keywords and focus rings. */
+  --color-accent: #f472b6;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+::selection {
+  background: rgb(236 72 153 / 0.4);
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+/* ---- Shared pieces ------------------------------------------------------ */
+
+/* Gradient display text (section headings). */
+.grad-text {
+  background-image: linear-gradient(
+    92deg,
+    var(--color-grape) 0%,
+    var(--color-magenta) 52%,
+    var(--color-ember) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Gradient pill CTA with icon + glow hover. */
+.grad-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 9999px;
+  padding: 0.8rem 1.7rem;
+  font-weight: 800;
+  font-size: 0.95rem;
+  color: #fff;
+  background-image: linear-gradient(92deg, #7c3aed 0%, #db2777 55%, #ea580c 100%);
+  transition:
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+.grad-pill:hover {
+  box-shadow: 0 10px 36px -8px rgb(236 72 153 / 0.6);
+  transform: translateY(-1px);
+}
+
+/* ---- Motion is optional -------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
