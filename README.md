@@ -12,7 +12,7 @@ Built with [Astro](https://astro.build) (static output) and Tailwind CSS v4.
 ```bash
 npm install
 npm run dev     # Astro prints its port (default 4321); stop with `npx astro dev stop`
-npm run build   # static build into dist/ — deploys anywhere (Cloudflare Pages / Vercel / Netlify)
+npm run build   # static build into dist/; pushes to main deploy it to GitHub Pages (.github/workflows/deploy.yml)
 ```
 
 ## Editing content

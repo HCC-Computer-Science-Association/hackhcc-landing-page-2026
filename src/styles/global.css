@@ -73,6 +73,12 @@ html {
   outline-offset: 3px;
 }
 
+/* The skip link focuses <main> (tabindex=-1) only to move the reading
+   position; a ring around the whole page would just be noise. */
+#main:focus {
+  outline: none;
+}
+
 /* ---- Shared pieces ------------------------------------------------------ */
 
 /* Gradient display text (section headings). */

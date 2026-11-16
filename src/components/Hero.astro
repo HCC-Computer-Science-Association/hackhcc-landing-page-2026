@@ -3,7 +3,9 @@
  * Full-viewport hero. DELTA vs hackutd: no skyline art and no color-gradient
  * background — the backdrop is a muted looping video segment behind a neutral
  * BLACK scrim. Below the tagline sit the edition chip and the hackutd-style
- * edition card (glowing logo tile + corner cursor) — both → Code Runners.
+ * edition card (glowing screenshot tile + corner cursor) — both link to the
+ * FEATURED edition: the newest one in the events collection with a site.
+ * Swapping editions is a JSON edit (`src/content/events/`), not a code edit.
  *
  * Video source, in priority order:
  *   1. `public/hero.mp4` (self-owned footage) → native <video>, checked at
@@ -17,15 +19,25 @@
  */
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
 import { site, heroVideo } from '../data/site';
 import Icon from './Icon.astro';
-import coverArt from '../assets/editions/coderunners-logo.png';
-import editionPreview from '../assets/editions/hackhcc-2026.png';
 
 const hasLocalVideo = fs.existsSync(
   fileURLToPath(new URL('../../public/hero.mp4', import.meta.url)),
 );
+
+const featured = (await getCollection('events'))
+  .map((e) => e.data)
+  // Same "live" rule as the Hackathons carousel, plus a preview for the card.
+  .filter((e) => e.status !== 'upcoming' && e.siteUrl && e.cover && e.preview)
+  .sort((a, b) => b.order - a.order)[0];
+if (!featured) throw new Error('Hero: no edition has siteUrl + cover + preview to feature');
+
+const ORDINAL_WORDS: Record<string, string> = { '01': 'first', '02': 'second', '03': 'third', '04': 'fourth', '05': 'fifth' };
+const which = ORDINAL_WORDS[featured.ordinal] ?? `no. ${featured.ordinal}`;
+const label = `${featured.name} ${featured.edition}`;
 ---
 
 <section id="top" class="relative flex min-h-svh items-center justify-center overflow-hidden bg-[#050309]">
@@ -62,7 +74,7 @@ const hasLocalVideo = fs.existsSync(
   <div class="absolute inset-x-0 bottom-0 h-44 bg-gradient-to-t from-black/75 to-transparent" aria-hidden="true"></div>
 
   {/* ---- Foreground stack ---- */}
-  <div class="relative z-10 flex flex-col items-center px-4 pb-24 pt-44 text-center md:pt-36">
+  <div class="relative z-10 flex flex-col items-center px-4 pb-24 pt-28 text-center md:pt-32">
     <p class="text-lg font-semibold tracking-wide text-white/90 md:text-xl">We are</p>
     <h1
       class="mt-1 text-[16.5vw] font-extrabold leading-none tracking-tight text-white md:text-9xl lg:text-[10.5rem]"
@@ -74,16 +86,16 @@ const hasLocalVideo = fs.existsSync(
       {site.tagline}
     </p>
 
-    {/* Featured-edition banner chip → the Code Runners subdomain */}
+    {/* Featured-edition banner chip → the featured edition's subdomain */}
     <a
-      href="https://coderunners.hackhcc.org"
+      href={featured.siteUrl}
       target="_blank"
       rel="noopener noreferrer"
       class="group mt-10 inline-flex items-center gap-3 rounded-full border border-white/20 bg-white/10 py-2.5 pl-4 pr-5 backdrop-blur-md transition hover:border-white/45 hover:bg-white/15"
     >
-      <Image src={coverArt} alt="" width={320} class="h-7 w-auto md:h-8" />
+      <Image src={featured.cover!} alt="" width={320} loading="eager" class="h-6 w-auto md:h-8" />
       <span class="text-sm font-bold text-white md:text-[15px]">
-        Code Runners 2026: visit the first edition
+        {label}: visit the {which} edition
       </span>
       <Icon
         name="chevron-right"
@@ -98,13 +110,13 @@ const hasLocalVideo = fs.existsSync(
       drawn fresh as a path — no downloaded artwork.
     */}
     <a
-      href="https://coderunners.hackhcc.org"
+      href={featured.siteUrl}
       target="_blank"
       rel="noopener noreferrer"
       class="edition-card mt-9"
-      aria-label="Open the Code Runners 2026 edition site"
+      aria-label={`Open the ${label} edition site`}
     >
-      <Image src={editionPreview} alt="" width={720} class="edition-card-logo" />
+      <Image src={featured.preview!} alt="" width={720} loading="eager" class="edition-card-logo" />
       <svg class="edition-card-cursor" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
         <path
           d="M5 2.2 18.6 13.2l-6.3.9 3.5 7.2-3 1.4-3.4-7.2L5 19.8z"
@@ -149,7 +161,7 @@ const hasLocalVideo = fs.existsSync(
     transition:
       box-shadow 0.4s,
       transform 0.4s;
-    animation: edition-card-in 2s;
+    animation: edition-card-in 0.9s;
   }
   .edition-card:hover {
     transform: translateY(2px);
@@ -167,7 +179,7 @@ const hasLocalVideo = fs.existsSync(
     height: 45%;
     filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.45));
     transition: opacity 0.2s;
-    animation: edition-cursor-in 2s;
+    animation: edition-cursor-in 0.9s;
   }
   .edition-card:hover .edition-card-cursor {
     opacity: 0;
@@ -217,22 +229,28 @@ const hasLocalVideo = fs.existsSync(
 <script>
   /**
    * Muted looping YouTube background via the official IFrame Player API.
-   * Mounts nothing under prefers-reduced-motion (poster ground stands), and
-   * with JS off this whole block never runs.
+   * Mounts nothing under prefers-reduced-motion or Save-Data (the poster
+   * ground stands), and with JS off this whole block never runs.
+   *
+   * Cost control: the API is fetched only after the page has loaded, the
+   * player uses YouTube's privacy-enhanced (no-cookie) host, and it pauses
+   * whenever the hero is scrolled out of view, so it isn't decoding video
+   * and pulling data behind the rest of the page.
    */
   const wrap = document.getElementById('hero-yt-wrap');
-  if (wrap && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  const saveData = (navigator as any).connection?.saveData === true;
+  if (wrap && !saveData && !window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const videoId = wrap.dataset.ytId ?? '';
     const start = Number(wrap.dataset.ytStart ?? 0);
     const end = Number(wrap.dataset.ytEnd ?? 0);
-    const section = wrap.closest('section');
+    const section = wrap.closest('section')!;
 
     // Oversize the 16:9 frame past the viewport so it covers like
     // object-fit: cover, with margin to push YouTube's UI chrome offscreen.
     const OVERSCAN = 1.32;
     const size = () => {
-      const vw = section?.clientWidth ?? window.innerWidth;
-      const vh = section?.clientHeight ?? window.innerHeight;
+      const vw = section.clientWidth || window.innerWidth;
+      const vh = section.clientHeight || window.innerHeight;
       let w: number;
       let h: number;
       if (vw / vh > 16 / 9) {
@@ -245,9 +263,24 @@ const hasLocalVideo = fs.existsSync(
       wrap.style.width = `${Math.ceil(w * OVERSCAN)}px`;
       wrap.style.height = `${Math.ceil(h * OVERSCAN)}px`;
     };
-    size();
-    window.addEventListener('resize', size);
+    // Section size changes without a window resize too (font swap, mobile
+    // address bar), so watch the section itself.
+    const resizer = new ResizeObserver(size);
+    resizer.observe(section);
     wrap.classList.remove('hidden');
+
+    let player: any = null;
+    let inView = true;
+    const sync = () => {
+      if (!player?.playVideo) return;
+      if (inView) player.playVideo();
+      else player.pauseVideo();
+    };
+    const visibility = new IntersectionObserver(([entry]) => {
+      inView = entry.isIntersecting;
+      sync();
+    });
+    visibility.observe(section);
 
     /**
      * RESILIENCE: if the video is removed, made private, region-locked, or has
@@ -262,11 +295,17 @@ const hasLocalVideo = fs.existsSync(
      * apart from a dead video; guessing there strips a working hero. YouTube's
      * own error codes say plainly when it is actually gone.
      */
-    const retire = () => wrap.remove();
+    const retire = () => {
+      resizer.disconnect();
+      visibility.disconnect();
+      player = null;
+      wrap.remove();
+    };
 
     const w = window as any;
     w.onYouTubeIframeAPIReady = () => {
       new w.YT.Player('hero-yt-frame', {
+        host: 'https://www.youtube-nocookie.com',
         width: '100%',
         height: '100%',
         videoId,
@@ -285,14 +324,15 @@ const hasLocalVideo = fs.existsSync(
         },
         events: {
           onReady: (e: any) => {
-            e.target.mute();
-            e.target.playVideo();
+            player = e.target;
+            player.mute();
+            sync();
           },
           onStateChange: (e: any) => {
             // Manual segment loop: `end` fires ENDED → seek back to `start`.
             if (e.data === w.YT.PlayerState.ENDED) {
               e.target.seekTo(start, true);
-              e.target.playVideo();
+              if (inView) e.target.playVideo();
             }
           },
           // 100 = gone · 101/150 = embedding disallowed · 2/5 = player fault.
@@ -301,9 +341,14 @@ const hasLocalVideo = fs.existsSync(
       });
     };
 
-    const tag = document.createElement('script');
-    tag.src = 'https://www.youtube.com/iframe_api';
-    tag.onerror = retire;
-    document.head.appendChild(tag);
+    // Fetch the API only once the page itself has finished loading.
+    const inject = () => {
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      tag.onerror = retire;
+      document.head.appendChild(tag);
+    };
+    if (document.readyState === 'complete') inject();
+    else window.addEventListener('load', inject, { once: true });
   }
 </script>

@@ -12,9 +12,15 @@ Edit a file, commit, and the site rebuilds.
 
 ## Announcing the next hackathon
 
+The hero and the Hackathons carousel both read `src/content/events/`. The
+carousel shows every edition, **newest first**. The hero features the newest
+edition that has a `siteUrl`, a `cover` (its logo) and a `preview` (a
+screenshot of its site, ~1138×622 PNG). Announcing an edition is a JSON edit:
+
 1. Open `src/content/events/2027-control-z.json` (or the next edition's file).
 2. Set `"status": "announced"` and fill in what is now public (venue,
-   `siteUrl`, blurb). After the event happens, set `"status": "past"` and add
+   `siteUrl`, blurb, `cover`, `preview`; art goes in `src/assets/editions/`).
+   After the event happens, set `"status": "past"` and add
    the **real** stat chips — only numbers you actually counted:
 
 ```json
@@ -30,8 +36,13 @@ Edit a file, commit, and the site rebuilds.
 | `status` | Renders as |
 | --- | --- |
 | `past` | Full card: art, chips, link to its site |
-| `announced` | Card with public details and a live link |
+| `announced` | Card with its logo, blurb and a live link (dates may still be TBA) |
 | `upcoming` | "Under wraps" card — no invented details |
+
+Control Z 2027 is `announced`: its site is up and its badge is the cover;
+the date is still TBA. Its `preview` is a screenshot of controlz.hackhcc.org
+with only About.txt open (Schedule and Challenge closed, the window centered,
+the "Activate Windows" joke watermark hidden) so it reads at thumbnail size.
 
 **Never invent a number.** Code Runners' chips (100+ Hackers, 24 Hours, 28
 Projects, 14 Sponsors) are confirmed figures; only add a stat once you have
@@ -69,8 +80,10 @@ headshots (`william-oyouha`, `khizar-ahmed`) ship at their native 709px and
 don't have one.
 
 The leadership block in `src/components/Team.astro` (John Pierre & Nelson
-Aviles, President & VP) still holds a **placeholder quote and photo** — swap
-in a real note when they write one. Never invent a quote for a real person.
+Aviles, President & VP) shows their photo (`src/assets/officers/john-and-nelson.jpg`,
+a 4:3 crop) and the note they wrote for this site, word for word. When the
+leads change, replace both together. Never invent or edit a quote for a real
+person.
 Officers without a headshot render a dashed "headshot pending" footprint;
 seats without a person yet are listed as "Name TBA".
 
@@ -120,12 +133,24 @@ backgrounded tab, and a timer would strip a video that was about to play.
 
 All in `src/data/site.ts`. Socials are **confirmed** (mirrored from the Code
 Runners site footer): Instagram `@hackhcc` and LinkedIn `company/compscia` —
-the only two, by decision. Anything marked `placeholder: true` is wired but
-**unconfirmed** — verify before launch and delete the flag:
+the only two, by decision.
 
-- `hello@hackhcc.org` / `sponsor@hackhcc.org`
-- the Interest Form (currently opens email; swap `ctas.interest.href` for the
-  real form URL)
+**Emails are confirmed.** hackhcc.org has a Namecheap catch-all forward to
+`officialhackhcc@gmail.com` (the inbox the Code Runners site lists), so
+`hello@hackhcc.org`, `sponsor@hackhcc.org` and any other `@hackhcc.org`
+address land there. Change it under Namecheap → hackhcc.org → Domain →
+Redirect Email.
+
+Still marked `placeholder: true`: the Interest Form (it opens an email until
+`ctas.interest.href` gets the real form URL).
+
+"More about us" in Our Mission links to the CSA site's about page
+(`site.organizerAbout`, https://hcc-csa.org/about/).
+
+**Social preview:** `public/og.jpg` (1200×630) is the card link previews show
+on Instagram, LinkedIn, Discord and iMessage; the tags are in
+`src/layouts/Base.astro`. It names Control Z 2027, so remake it when the
+featured edition changes.
 
 **MLH badge:** bump `mlh.season` once a year (line ~54). The badge is
 hotlinked from MLH's own asset host and is never copied, redrawn, recolored,
@@ -145,9 +170,11 @@ curl -sI "https://s3.amazonaws.com/logged-assets/trust-badge/2027/mlh-trust-badg
 (all 14, in the edition site's tier order) inside the original
 placeholder-style tiles on the light panel, with logo files in
 `src/assets/sponsors/`. Google and Nexos are text marks (no light-ground
-logo asset exists) and Nexos has no URL — mirroring the edition site. To add
-or change a sponsor, edit the `sponsors` array and drop the logo file in
-`src/assets/sponsors/`.
+logo asset exists) and Nexos has no URL, so its tile isn't a link, mirroring
+the edition site. The panel is labelled "Code Runners 2026 sponsors" so the
+wall doesn't read as Control Z's sponsors; update that label when the
+2027 sponsor list exists. To add or change a sponsor, edit the `sponsors`
+array (`url` is optional) and drop the logo file in `src/assets/sponsors/`.
 
 ---
 
@@ -164,16 +191,23 @@ blur.
 ## Before-launch checklist
 
 - [ ] Real Interest Form URL (`src/data/site.ts` → `ctas.interest`)
-- [ ] Confirm both emails; delete `placeholder` flags (socials already confirmed)
-- [ ] Logo artwork → replace the "HackHCC logo" text slot in `src/components/Nav.astro`
+- [x] Emails confirmed: Namecheap catch-all → officialhackhcc@gmail.com
+- [x] Logo artwork → the Control Z badge stands in as the HackHCC logo
+      (`src/components/Nav.astro`); swap it if an edition-neutral mark is made
 - [x] Mission photo → officers group shot from Code Runners
-- [ ] Leadership photo + real quote → `src/components/Team.astro`
-- [ ] "More about us" link target (`Mission.astro`, currently `#`)
+- [x] Leadership photo + real quote → `src/components/Team.astro`
+- [ ] **controlz.hackhcc.org serves the Control Z site** before this version
+      ships: the hero chip, hero card and first carousel slide all link there.
+      DNS is done (CNAME `controlz` → hcc-computer-science-association.github.io);
+      still needed: merge the hackhcc-ctrl-z custom-domain PR and set its
+      Settings → Pages → Custom domain at the same time
+- [x] "More about us" → https://hcc-csa.org/about/
 - [ ] Hero footage: current embed is a third party's (see above). Self-host at
       `public/hero.mp4` only with owned or licensed footage — `npm run hero:encode`
 - [ ] Hi-res campus photo for the parallax band
-- [ ] `og:image` for social sharing (`src/layouts/`)
-- [ ] Pick a deploy target — `dist/` is platform-agnostic static
+- [x] `og:image` for social sharing → `public/og.jpg`
+- [x] Deploy target: GitHub Pages (`.github/workflows/deploy.yml`)
+- [ ] Nelson Aviles' headshot is 200×200 (upscaled to 480); needs an 800×800 original
 
 ---
 
