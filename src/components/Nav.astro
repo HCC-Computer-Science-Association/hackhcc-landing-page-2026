@@ -1,33 +1,59 @@
 ---
 /**
- * Top navigation: centered anchor links over the hero (hackutd-style).
- * No theme toggle — the site is dark-only by decision.
+ * Top navigation, fixed to the viewport so the section links stay reachable
+ * all the way down the page. Transparent over the hero; once the page
+ * scrolls it gains a translucent dark bar (`[data-scrolled]`).
  *
- * PLACEHOLDER: no HackHCC logo artwork exists yet, so a literal bordered
- * "HackHCC logo" text slot stands where a mark would sit. It sits at
- * nav-LEFT (hackutd-style placement); the MLH Trust Badge owns the
- * top-right corner. Swap the slot's contents for the real mark when it lands.
+ * Logo at LEFT (hackutd-style placement); the MLH Trust Badge is fixed to
+ * the top-right corner, so the bar keeps right padding (`pr-24` / `md:pr-36`)
+ * and nothing slides under it. HackHCC has no edition-neutral mark yet, so
+ * the Control Z badge stands in as the HackHCC logo; swap `logo` when a
+ * house mark exists.
+ *
+ * Below `lg` the links collapse into a menu button with a drop-down panel.
+ * Without JS the button does nothing, but the anchors are still in the page
+ * (every section is reachable by scrolling), and the skip link still works.
  */
+import { Image } from 'astro:assets';
 import { anchors } from '../data/site';
+import Icon from './Icon.astro';
+import logo from '../assets/editions/ctrlz-logo.png';
 ---
 
-<header class="absolute inset-x-0 top-0 z-40">
-  <div class="relative mx-auto max-w-7xl px-4">
-    <div
-      class="absolute left-4 top-5 rounded-lg border border-dashed border-white/30 bg-black/30 px-3 py-1.5 text-[11px] font-extrabold uppercase tracking-[0.14em] text-white/65 backdrop-blur-sm"
-      title="Placeholder: logo artwork pending"
-    >
-      HackHCC logo
-    </div>
-    <nav aria-label="Page sections">
+<a
+  href="#main"
+  class="sr-only z-[60] rounded-full bg-white px-4 py-2 text-sm font-extrabold text-ground focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+>
+  Skip to content
+</a>
+
+<header id="site-header" class="site-header fixed inset-x-0 top-0 z-40">
+  <div class="relative mx-auto flex h-16 max-w-7xl items-center px-4 pr-24 md:h-20 md:pr-36">
+    <a href="#top" class="block shrink-0 rounded-md transition hover:brightness-110">
+      <Image src={logo} alt="HackHCC home" width={400} class="h-7 w-auto md:h-9" loading="eager" />
+    </a>
+
+    <nav aria-label="Page sections" class="ml-auto lg:absolute lg:left-1/2 lg:ml-0 lg:w-max lg:-translate-x-1/2">
+      <button
+        type="button"
+        class="nav-toggle flex h-11 items-center gap-2 rounded-full border border-white/20 bg-black/40 px-4 text-sm font-bold text-white backdrop-blur-md transition hover:border-white/45 lg:hidden"
+        aria-expanded="false"
+        aria-controls="nav-menu"
+      >
+        <Icon name="menu" class="nav-icon-open h-5 w-5" />
+        <Icon name="close" class="nav-icon-close hidden h-5 w-5" />
+        Menu
+      </button>
+
       <ul
-        class="flex flex-wrap items-center justify-center gap-x-8 gap-y-1.5 px-2 pt-32 md:px-32 md:pt-8"
+        id="nav-menu"
+        class="nav-menu absolute right-24 top-full mt-2 hidden w-56 flex-col rounded-2xl border border-white/15 bg-ground/95 p-2 shadow-[0_20px_60px_rgba(0,0,0,0.5)] backdrop-blur-md md:right-36 lg:static lg:mt-0 lg:flex lg:w-auto lg:flex-row lg:items-center lg:gap-1 lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none lg:backdrop-blur-none"
       >
         {
           anchors.map((a) => (
             <li>
               <a
-                class="text-sm font-bold text-white/85 transition hover:text-accent"
+                class="block whitespace-nowrap rounded-lg px-3 py-2.5 text-sm font-bold text-white/85 transition hover:bg-white/5 hover:text-accent lg:rounded-full lg:py-2"
                 href={`#${a.id}`}
               >
                 {a.label}
@@ -39,3 +65,59 @@ import { anchors } from '../data/site';
     </nav>
   </div>
 </header>
+
+<style>
+  .site-header {
+    transition:
+      background-color 0.3s ease,
+      border-color 0.3s ease,
+      backdrop-filter 0.3s ease;
+    border-bottom: 1px solid transparent;
+  }
+  .site-header[data-scrolled] {
+    background-color: rgb(10 8 18 / 0.78);
+    border-bottom-color: rgb(255 255 255 / 0.08);
+    backdrop-filter: blur(12px);
+  }
+  .site-header[data-open] .nav-menu {
+    display: flex;
+  }
+  /* The icons are rendered by Icon.astro, outside this component's scope. */
+  .site-header[data-open] :global(.nav-icon-open) {
+    display: none;
+  }
+  .site-header[data-open] :global(.nav-icon-close) {
+    display: block;
+  }
+</style>
+
+<script>
+  const header = document.getElementById('site-header');
+  if (header) {
+    // Translucent bar once the page leaves the very top.
+    const onScroll = () => header.toggleAttribute('data-scrolled', window.scrollY > 24);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+
+    // Mobile menu: toggle, then close on a link tap, Escape, or a tap outside.
+    const toggle = header.querySelector<HTMLButtonElement>('.nav-toggle')!;
+    const menu = header.querySelector<HTMLElement>('#nav-menu')!;
+    const setOpen = (open: boolean) => {
+      header.toggleAttribute('data-open', open);
+      toggle.setAttribute('aria-expanded', String(open));
+    };
+    toggle.addEventListener('click', () => setOpen(!header.hasAttribute('data-open')));
+    menu.addEventListener('click', (e) => {
+      if ((e.target as HTMLElement).closest('a')) setOpen(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && header.hasAttribute('data-open')) {
+        setOpen(false);
+        toggle.focus();
+      }
+    });
+    document.addEventListener('click', (e) => {
+      if (header.hasAttribute('data-open') && !header.contains(e.target as Node)) setOpen(false);
+    });
+  }
+</script>

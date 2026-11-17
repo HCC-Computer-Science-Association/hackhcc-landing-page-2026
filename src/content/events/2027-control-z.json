@@ -2,9 +2,13 @@
   "name": "Control Z",
   "edition": "2027",
   "ordinal": "02",
-  "status": "upcoming",
-  "blurb": "Edition two is in production. No dates, no venue, no site yet. When that changes, this page changes first.",
-  "mlhMember": false,
+  "status": "announced",
+  "venue": "Houston City College",
+  "siteUrl": "https://controlz.hackhcc.org",
+  "cover": "../../assets/editions/ctrlz-logo.png",
+  "preview": "../../assets/editions/hackhcc-2027.png",
+  "blurb": "Edition two, and an official Major League Hacking member event: 24 hours of building at Houston City College, open to students from any school. The theme is undo. The date is still TBA, but the site is live.",
+  "mlhMember": true,
   "stats": [],
   "order": 2027
 }

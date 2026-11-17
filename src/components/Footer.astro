@@ -8,6 +8,9 @@ import { Image } from 'astro:assets';
 import { socials, contact } from '../data/site';
 import Icon from './Icon.astro';
 import csaLogo from '../assets/csa-white-logo.png';
+
+/** Stamped at build time, so it rolls over on the first deploy of a new year. */
+const year = new Date().getFullYear();
 ---
 
 <footer class="bg-gradient-to-r from-[#6d28d9] via-[#be185d] to-[#c2410c] text-white">
@@ -15,7 +18,7 @@ import csaLogo from '../assets/csa-white-logo.png';
     <div class="flex flex-col items-center gap-3 sm:flex-row">
       <Image src={csaLogo} alt="Computer Science Association logo" width={240} class="h-10 w-auto" />
       <p class="text-sm font-bold md:text-base">
-        &copy; 2026 HackHCC by the Computer Science Association at Houston City College
+        &copy; {year} HackHCC by the Computer Science Association at Houston City College
       </p>
     </div>
 

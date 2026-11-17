@@ -18,6 +18,8 @@ export const site = {
   tagline: "Houston City College's own 24-hour hackathon.",
   description:
     'HackHCC is the hackathon run by the Computer Science Association at Houston City College: 24 hours of building, workshops that assume nothing, free food and merch, and first-timers welcome.',
+  /** The organizer's own site; "More about us" in Our Mission links here. */
+  organizerAbout: 'https://hcc-csa.org/about/',
 } as const;
 
 /**
@@ -51,12 +53,12 @@ export const heroVideo = {
  * own asset host, linking to mlh.io, never copied, redrawn, recolored, or
  * filtered. Bump `season` once a year and verify the asset resolves:
  *
- *   curl -sI "https://s3.amazonaws.com/logged-assets/trust-badge/2026/mlh-trust-badge-2026-white.svg" | head -1
+ *   curl -sI "https://s3.amazonaws.com/logged-assets/trust-badge/2027/mlh-trust-badge-2027-white.svg" | head -1
  *
  * `white` is the colourway MLH draws for dark grounds.
  */
 export const mlh = {
-  season: '2026',
+  season: '2027',
   variant: 'white' as 'white' | 'black' | 'blue' | 'red' | 'gray',
   get badgeSrc() {
     return `https://s3.amazonaws.com/logged-assets/trust-badge/${this.season}/mlh-trust-badge-${this.season}-${this.variant}.svg`;
@@ -78,7 +80,11 @@ export const socials = [
   { label: 'LinkedIn', handle: 'compscia', href: 'https://www.linkedin.com/company/compscia/', icon: 'linkedin' },
 ] as const;
 
-/** PLACEHOLDER addresses: confirm before launch. */
+/**
+ * Confirmed: hackhcc.org has a Namecheap catch-all forward to
+ * officialhackhcc@gmail.com (the inbox the Code Runners site lists), so
+ * every @hackhcc.org address, these two included, lands there.
+ */
 export const contact = {
   general: 'hello@hackhcc.org',
   sponsor: 'sponsor@hackhcc.org',

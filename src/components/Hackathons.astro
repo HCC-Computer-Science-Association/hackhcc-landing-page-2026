@@ -1,14 +1,20 @@
 ---
 /**
  * Hackathons — hackutd-style centered big-card carousel with side arrows and
- * dot pagination. Two slides:
- *   (a) Code Runners 2026 — real cover art and four confirmed stat chips
- *       (100+ Hackers, 24 Hours, 28 Projects, 14 Sponsors). Card links to
- *       the edition site.
- *   (b) Control Z 2027 — artwork-under-wraps placeholder; nothing invented.
+ * dot pagination. One slide per edition in `src/content/events/`, NEWEST
+ * FIRST, so a new edition lands as the opening slide with no code change.
+ *
+ * How a slide renders depends on the edition's `status`:
+ *   past / announced → cover art (the edition's logo) in a card that links to
+ *       its site. Confirmed stat chips sit under it when the edition has
+ *       any; otherwise its blurb does. Never invent a number.
+ *   upcoming → the "artwork under wraps" footprint; nothing invented.
  *
  * Degrades to stacked cards without JS; arrows/dots appear only when the
  * script enhances the block. Keyboard: ← / → on the focused viewport.
+ * Side arrows sit on the artwork's vertical centre (inside the card until
+ * `xl`, where the gutter is wide enough to hold them); phones get the
+ * arrows in one row with the dots instead.
  */
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
@@ -17,14 +23,10 @@ import Icon from './Icon.astro';
 
 const events = (await getCollection('events'))
   .map((e) => e.data)
-  .sort((a, b) => a.order - b.order);
+  .sort((a, b) => b.order - a.order);
 
-const codeRunners = events.find((e) => e.name === 'Code Runners');
-const controlZ = events.find((e) => e.name === 'Control Z');
-if (!codeRunners || !controlZ) throw new Error('Expected both edition entries');
-
-/** Confirmed chips for the 4-chip row (from the content collection). */
-const chips = codeRunners.stats.filter((s) => s.label !== 'Edition');
+/** The "Edition" stat duplicates the footer label, so it never becomes a chip. */
+const chipsOf = (e: (typeof events)[number]) => e.stats.filter((s) => s.label !== 'Edition');
 ---
 
 <section id="hackathons" class="scroll-mt-20 overflow-x-clip">
@@ -34,7 +36,7 @@ const chips = codeRunners.stats.filter((s) => s.label !== 'Edition');
     <div class="hx relative" data-carousel>
       <button
         type="button"
-        class="hx-btn absolute -left-2 top-[38%] z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-ground/80 text-white backdrop-blur transition hover:border-white/40 hover:bg-white/10 lg:-left-16"
+        class="hx-side absolute left-3 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-ground/80 text-white backdrop-blur transition hover:border-white/40 hover:bg-white/10 xl:-left-16"
         data-dir="-1"
         aria-label="Previous edition"
       >
@@ -42,7 +44,7 @@ const chips = codeRunners.stats.filter((s) => s.label !== 'Edition');
       </button>
       <button
         type="button"
-        class="hx-btn absolute -right-2 top-[38%] z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-ground/80 text-white backdrop-blur transition hover:border-white/40 hover:bg-white/10 lg:-right-16"
+        class="hx-side absolute right-3 z-10 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full border border-white/15 bg-ground/80 text-white backdrop-blur transition hover:border-white/40 hover:bg-white/10 xl:-right-16"
         data-dir="1"
         aria-label="Next edition"
       >
@@ -55,120 +57,168 @@ const chips = codeRunners.stats.filter((s) => s.label !== 'Edition');
         aria-roledescription="carousel"
         aria-label="HackHCC editions"
       >
-        <ul class="hx-track">
-          {/* ---- Slide 1 · Code Runners 2026 (real, past) ---- */}
-          <li class="hx-slide" data-slide>
-            <a
-              href={codeRunners.siteUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              class="group block overflow-hidden rounded-2xl border border-white/10 bg-panel transition hover:border-white/30"
-            >
-              <div class="flex aspect-[16/8] items-center justify-center bg-[#100a1c] p-8 md:p-14">
-                {
-                  codeRunners.cover && (
-                    <Image
-                      src={codeRunners.cover}
-                      alt="Code Runners 2026 cover art"
-                      widths={[640, 1035]}
-                      sizes="(min-width: 1024px) 900px, 92vw"
-                      class="max-h-full w-auto max-w-full drop-shadow-[0_12px_40px_rgba(139,92,246,0.25)] transition duration-300 group-hover:scale-[1.02]"
-                    />
-                  )
-                }
-              </div>
-              <div
-                class="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-5 py-4 md:px-7"
-              >
-                <p class="text-base font-extrabold text-white md:text-lg">
-                  {codeRunners.name}
-                  <span class="ml-2 text-sm font-bold text-white/50">Edition {codeRunners.ordinal} · {codeRunners.venue}</span>
-                </p>
-                <p class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/60">
-                  Official MLH Member Event
-                  <Icon
-                    name="chevron-right"
-                    class="h-4 w-4 text-white/50 transition group-hover:translate-x-0.5 group-hover:text-white"
-                  />
-                </p>
-              </div>
-            </a>
-            <p class="mt-5 text-center text-base font-extrabold tracking-wide text-white/70">
-              {codeRunners.edition}
-            </p>
-            <ul class="mt-4 flex flex-wrap items-center justify-center gap-3">
-              {
-                chips.map((s) => (
-                  <li class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.05] px-4 py-1.5 text-sm font-bold text-white/85">
-                    <span class="grad-text font-extrabold">{s.value}</span> {s.label}
-                  </li>
-                ))
-              }
-            </ul>
-          </li>
-
-          {/* ---- Slide 2 · Control Z 2027 (upcoming, unannounced) ---- */}
-          <li class="hx-slide" data-slide>
-            <div
-              class="flex aspect-[16/8] flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-white/15 bg-white/[0.02] px-6 text-center"
-            >
-              <p class="grad-text text-4xl font-extrabold tracking-tight md:text-6xl">Control Z</p>
-              <p class="text-sm font-extrabold uppercase tracking-[0.22em] text-white/45">
-                Artwork under wraps
-              </p>
-              <p class="max-w-md text-sm leading-relaxed text-white/40">{controlZ.blurb}</p>
-            </div>
-            <p class="mt-5 text-center text-base font-extrabold tracking-wide text-white/70">
-              {controlZ.edition}, not announced yet
-            </p>
-          </li>
-        </ul>
+        <div class="hx-track">
+          {
+            events.map((e, i) => {
+              const chips = chipsOf(e);
+              const live = e.status !== 'upcoming' && e.cover && e.siteUrl;
+              return (
+                <div
+                  class="hx-slide"
+                  data-slide
+                  role="group"
+                  aria-roledescription="slide"
+                  aria-label={`${i + 1} of ${events.length}: ${e.name} ${e.edition}`}
+                >
+                  {live ? (
+                    <a
+                      href={e.siteUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      class="hx-card group block overflow-hidden rounded-2xl border border-white/10 bg-panel transition hover:border-white/30"
+                    >
+                      <div class="flex aspect-[16/8] items-center justify-center bg-[#100a1c] p-8 md:p-14">
+                        <Image
+                          src={e.cover!}
+                          alt={`${e.name} ${e.edition} logo`}
+                          widths={[640, 1035]}
+                          sizes="(min-width: 1024px) 900px, 92vw"
+                          class="max-h-full w-auto max-w-full drop-shadow-[0_12px_40px_rgba(139,92,246,0.25)] transition duration-300 group-hover:scale-[1.02]"
+                        />
+                      </div>
+                      <div class="flex flex-wrap items-center justify-between gap-2 border-t border-white/10 px-5 py-4 md:px-7">
+                        <p class="text-base font-extrabold text-white md:text-lg">
+                          {e.name}
+                          <span class="ml-2 text-sm font-bold text-white/50">
+                            Edition {e.ordinal}
+                            {e.venue && ` · ${e.venue}`}
+                          </span>
+                        </p>
+                        <p class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white/60">
+                          {e.mlhMember ? 'Official MLH Member Event' : 'Visit the site'}
+                          <Icon
+                            name="chevron-right"
+                            class="h-4 w-4 text-white/50 transition group-hover:translate-x-0.5 group-hover:text-white"
+                          />
+                        </p>
+                      </div>
+                    </a>
+                  ) : (
+                    <div class="flex aspect-[16/8] flex-col items-center justify-center gap-4 rounded-2xl border-2 border-dashed border-white/15 bg-white/[0.02] px-6 text-center">
+                      <p class="grad-text text-4xl font-extrabold tracking-tight md:text-6xl">{e.name}</p>
+                      <p class="text-sm font-extrabold uppercase tracking-[0.22em] text-white/45">
+                        Artwork under wraps
+                      </p>
+                      <p class="max-w-md text-sm leading-relaxed text-white/60">{e.blurb}</p>
+                    </div>
+                  )}
+                  <p class="mt-5 text-center text-base font-extrabold tracking-wide text-white/70">
+                    {e.edition}
+                    {e.status === 'upcoming' && ', not announced yet'}
+                  </p>
+                  {live && chips.length > 0 && (
+                    <ul class="mt-4 flex flex-wrap items-center justify-center gap-3">
+                      {chips.map((s) => (
+                        <li class="inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.05] px-4 py-1.5 text-sm font-bold text-white/85">
+                          <span class="grad-text font-extrabold">{s.value}</span> {s.label}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                  {live && chips.length === 0 && (
+                    <p class="mx-auto mt-3 max-w-xl text-balance text-center text-sm leading-relaxed text-white/60 md:text-base">
+                      {e.blurb}
+                    </p>
+                  )}
+                </div>
+              );
+            })
+          }
+        </div>
       </div>
 
-      <div class="hx-dots mt-8 hidden justify-center gap-2.5" role="tablist" aria-label="Choose edition">
+      <div class="hx-controls mt-8 hidden items-center justify-center gap-3">
         <button
           type="button"
-          role="tab"
-          data-index="0"
-          aria-label="Code Runners 2026"
-          class="hx-dot h-2.5 w-2.5 rounded-full bg-white/25 transition"
-        ></button>
+          class="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition hover:border-white/40 hover:bg-white/10 md:hidden"
+          data-dir="-1"
+          aria-label="Previous edition"
+        >
+          <Icon name="chevron-left" class="h-5 w-5" />
+        </button>
+        <div class="flex items-center gap-1" role="group" aria-label="Choose edition">
+          {
+            events.map((e, i) => (
+              <button
+                type="button"
+                data-index={i}
+                aria-label={`${e.name} ${e.edition}`}
+                class="hx-dot grid h-6 w-6 place-items-center rounded-full"
+              >
+                <span class="hx-pip block h-2.5 w-2.5 rounded-full bg-white/25 transition" />
+              </button>
+            ))
+          }
+        </div>
         <button
           type="button"
-          role="tab"
-          data-index="1"
-          aria-label="Control Z 2027"
-          class="hx-dot h-2.5 w-2.5 rounded-full bg-white/25 transition"
-        ></button>
+          class="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/5 text-white transition hover:border-white/40 hover:bg-white/10 md:hidden"
+          data-dir="1"
+          aria-label="Next edition"
+        >
+          <Icon name="chevron-right" class="h-5 w-5" />
+        </button>
       </div>
     </div>
   </div>
 </section>
 
 <style>
+  /* Size queries: the side arrows sit on the artwork's centre (the art is
+     16:8, so its centre is a quarter of the carousel's width down). */
+  .hx {
+    container-type: inline-size;
+  }
+  .hx-side {
+    top: 25cqw;
+  }
+
   /* No-JS default: slides stack; controls stay hidden. */
   .hx-track {
     display: grid;
     gap: 3rem;
   }
-  /* Enhanced: a sliding row. */
+  /* Enhanced: a sliding row. No gap: slide N must sit at exactly N × 100%,
+     or translateX(-N × 100%) lands a gap short and clips the card's edge. */
   .hx.is-on .hx-track {
     display: flex;
+    gap: 0;
     transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .hx.is-on .hx-track {
+      transition: none;
+    }
   }
   .hx.is-on .hx-slide {
     width: 100%;
     flex-shrink: 0;
   }
-  .hx.is-on :global(.hx-btn) {
+  .hx.is-on .hx-controls {
     display: flex;
   }
-  .hx.is-on .hx-dots {
-    display: flex;
+  @media (min-width: 48rem) {
+    .hx.is-on .hx-side {
+      display: flex;
+    }
   }
-  .hx-dot[aria-selected='true'] {
+  .hx-dot[aria-current='true'] .hx-pip {
     background: linear-gradient(92deg, #8b5cf6, #ec4899, #f97316);
     transform: scale(1.25);
+  }
+  /* The viewport clips overflow, so draw the card's focus ring inside it. */
+  .hx-card:focus-visible {
+    outline-offset: -4px;
   }
 </style>
 
@@ -184,13 +234,12 @@ const chips = codeRunners.stats.filter((s) => s.label !== 'Edition');
 
     const apply = () => {
       track.style.transform = `translateX(-${index * 100}%)`;
-      slides.forEach((slide, k) => {
-        slide.setAttribute('aria-hidden', String(k !== index));
-        slide
-          .querySelectorAll<HTMLElement>('a, button')
-          .forEach((el) => (el.tabIndex = k === index ? 0 : -1));
+      // `inert` hides off-screen slides from focus and assistive tech alike.
+      slides.forEach((slide, k) => (slide.inert = k !== index));
+      dots.forEach((dot, k) => {
+        if (k === index) dot.setAttribute('aria-current', 'true');
+        else dot.removeAttribute('aria-current');
       });
-      dots.forEach((dot, k) => dot.setAttribute('aria-selected', String(k === index)));
     };
     const go = (n: number) => {
       index = (n + slides.length) % slides.length;

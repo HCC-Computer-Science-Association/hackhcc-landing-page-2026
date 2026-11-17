@@ -7,11 +7,9 @@
  * clipped to skewed band edges and darkened for legibility. Parallax is fully
  * disabled under prefers-reduced-motion (static image stands).
  *
- * PLACEHOLDER ×2 in the leadership block:
- *   - photo frame (no leadership photo exists yet; the officers group shot
- *     lives in Our Mission)
- *   - quote slot ("note coming soon") — the attribution names and titles are
- *     real (team.yaml); the quote text must never be invented.
+ * Leadership block: a photo of John Pierre and Nelson Aviles beside the note
+ * they wrote for this site. The quote is theirs, word for word; never edit or
+ * invent it. Names and titles mirror csa-website's team.yaml.
  *
  * Officers without a headshot (new seats, unfilled seats) render the dashed
  * "headshot pending" footprint — same convention as csa-website.
@@ -21,6 +19,7 @@ import { Image } from 'astro:assets';
 import SectionHead from './SectionHead.astro';
 import Icon from './Icon.astro';
 import campus from '../assets/campus/whi.jpg';
+import leads from '../assets/officers/john-and-nelson.jpg';
 
 const officers = (await getCollection('officers'))
   .map((o) => o.data)
@@ -43,7 +42,11 @@ for (let i = 0; i < officers.length; i += PAGE_SIZE) pages.push(officers.slice(i
       <img
         id="team-parallax"
         src={campus.src}
+        width={campus.width}
+        height={campus.height}
         alt=""
+        loading="lazy"
+        decoding="async"
         class="absolute left-0 top-[-15%] h-[130%] w-full object-cover blur-[2px] will-change-transform"
       />
       <div class="absolute inset-0 bg-[#0a0812]/82"></div>
@@ -53,29 +56,26 @@ for (let i = 0; i < officers.length; i += PAGE_SIZE) pages.push(officers.slice(i
   <div class="mx-auto max-w-6xl px-4">
     <SectionHead title="Meet the Team" align="left" />
 
-    {/* ---- Leadership block: photo slot + quote slot (both declared placeholders) ---- */}
+    {/* ---- Leadership block: John & Nelson's photo + their note ---- */}
     <div class="grid items-center gap-10 md:grid-cols-[minmax(0,26rem)_1fr] md:gap-16">
-      <div
-        class="flex aspect-[4/3] flex-col items-center justify-center gap-3 rounded-2xl border-2 border-dashed border-white/15 bg-white/[0.03] p-6 text-center backdrop-blur-sm"
-        role="img"
-        aria-label="Placeholder: leadership photo slot reserved"
-      >
-        <Icon name="camera" class="h-10 w-10 text-white/30" />
-        <p class="text-sm font-extrabold uppercase tracking-[0.18em] text-white/45">
-          Leadership photo
-        </p>
-        <p class="max-w-56 text-xs leading-relaxed text-white/35">Slot reserved</p>
+      <div class="overflow-hidden rounded-2xl border border-white/10 bg-panel shadow-[0_18px_50px_rgba(0,0,0,0.45)]">
+        <Image
+          src={leads}
+          alt="John Pierre and Nelson Aviles"
+          widths={[480, 832]}
+          sizes="(min-width: 768px) 26rem, 92vw"
+          class="aspect-[4/3] w-full object-cover"
+        />
       </div>
 
       <figure>
         <div class="grad-text text-6xl font-extrabold leading-none md:text-7xl" aria-hidden="true">
           &ldquo;
         </div>
-        <blockquote
-          class="mt-1 text-2xl font-bold text-white/50 md:text-3xl"
-          title="Placeholder: awaiting a real quote from John and Nelson"
-        >
-          A note from our leads is coming soon.
+        <blockquote class="mt-1 max-w-[38rem] text-pretty text-xl font-semibold leading-snug text-white/90 md:text-2xl">
+          When we started CSA, we wanted to build something bigger than any one of us. It&rsquo;s a place where
+          students could learn by building, not just studying. HackHCC is that vision in action. Thank you for
+          being part of it!
         </blockquote>
         <figcaption class="mt-6">
           <p class="text-base font-extrabold text-white md:text-lg">
@@ -115,7 +115,12 @@ for (let i = 0; i < officers.length; i += PAGE_SIZE) pages.push(officers.slice(i
         </div>
       </div>
 
-      <div class="off-pages space-y-10" role="group" aria-roledescription="carousel" aria-label="HackHCC officers">
+      <div
+        class="off-pages space-y-10"
+        role={pages.length > 1 ? 'group' : undefined}
+        aria-roledescription={pages.length > 1 ? 'carousel' : undefined}
+        aria-label={pages.length > 1 ? 'HackHCC officers' : undefined}
+      >
         {
           pages.map((page, pi) => (
             <ul
@@ -147,7 +152,7 @@ for (let i = 0; i < officers.length; i += PAGE_SIZE) pages.push(officers.slice(i
                         aria-label={`Placeholder: no headshot for ${o.name} yet`}
                       >
                         <Icon name="camera" class="h-7 w-7 text-white/25" />
-                        <p class="text-[10px] font-extrabold uppercase tracking-[0.18em] text-white/40">
+                        <p class="text-[11px] font-extrabold uppercase tracking-[0.18em] text-white/60">
                           Headshot pending
                         </p>
                       </div>

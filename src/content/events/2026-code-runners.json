@@ -6,6 +6,7 @@
   "venue": "Houston City College",
   "siteUrl": "https://coderunners.hackhcc.org",
   "cover": "../../assets/editions/coderunners-logo.png",
+  "preview": "../../assets/editions/hackhcc-2026.png",
   "blurb": "The first HackHCC ever held: an official Major League Hacking member event that put 100+ hackers in one building at Houston City College for 24 straight hours. For most of them, it was their first hackathon.",
   "mlhMember": true,
   "stats": [
