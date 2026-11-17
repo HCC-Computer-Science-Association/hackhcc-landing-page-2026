@@ -8,25 +8,28 @@
  * Swapping editions is a JSON edit (`src/content/events/`), not a code edit.
  *
  * Video source, in priority order:
- *   1. `public/hero.mp4` (self-owned footage) → native <video>, checked at
- *      build time. PREFER this once owned footage exists.
- *   2. Otherwise the YouTube segment configured in `heroVideo` (site.ts),
- *      played via the official IFrame Player API: muted, chromeless,
- *      looping `startSeconds`→`endSeconds`.
+ *   1. `public/hero.mp4` → native <video>, checked at build time, with
+ *      `public/hero-poster.jpg` (its first frame) as the poster so the city
+ *      shows the moment the page paints. No player UI, seamless loop.
+ *   2. Otherwise the YouTube segment configured in `heroVideo` (site.ts):
+ *      a muted, chromeless embed controlled through the official IFrame
+ *      Player API, looping `startSeconds`→`endSeconds` (see the script).
  *
  * Fallbacks: with prefers-reduced-motion or without JS, no video mounts and
  * the plain near-black poster ground stands.
  */
 import fs from 'node:fs';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path';
 import { getCollection } from 'astro:content';
 import { Image } from 'astro:assets';
 import { site, heroVideo } from '../data/site';
 import Icon from './Icon.astro';
 
-const hasLocalVideo = fs.existsSync(
-  fileURLToPath(new URL('../../public/hero.mp4', import.meta.url)),
-);
+// Resolved from the project root: at build time this component runs from a
+// bundled chunk, so a path relative to import.meta.url never finds public/.
+const inPublic = (file: string) => fs.existsSync(path.join(process.cwd(), 'public', file));
+const hasLocalVideo = inPublic('hero.mp4');
+const hasPoster = inPublic('hero-poster.jpg');
 
 const featured = (await getCollection('events'))
   .map((e) => e.data)
@@ -40,6 +43,16 @@ const which = ORDINAL_WORDS[featured.ordinal] ?? `no. ${featured.ordinal}`;
 const label = `${featured.name} ${featured.edition}`;
 ---
 
+{
+  !hasLocalVideo && (
+    <>
+      <link rel="preconnect" href="https://www.youtube-nocookie.com" />
+      <link rel="preconnect" href="https://www.youtube.com" />
+      <link rel="preconnect" href="https://www.google.com" />
+    </>
+  )
+}
+
 <section id="top" class="relative flex min-h-svh items-center justify-center overflow-hidden bg-[#050309]">
   {/* ---- Media layer (aria-hidden, pointer-events off, purely decorative) ---- */}
   {
@@ -50,7 +63,8 @@ const label = `${featured.name} ${featured.edition}`;
         muted
         loop
         playsinline
-        preload="metadata"
+        preload="auto"
+        poster={hasPoster ? '/hero-poster.jpg' : undefined}
         src={heroVideo.localHeroVideo}
         aria-hidden="true"
       />
@@ -62,9 +76,7 @@ const label = `${featured.name} ${featured.edition}`;
         data-yt-id={heroVideo.youtubeId}
         data-yt-start={heroVideo.startSeconds}
         data-yt-end={heroVideo.endSeconds}
-      >
-        <div id="hero-yt-frame" />
-      </div>
+      />
     )
   }
 
@@ -141,10 +153,19 @@ const label = `${featured.name} ${featured.edition}`;
 </section>
 
 <style is:global>
+  /* Each player is invisible until the script shows it: never while it is
+     loading, and never while YouTube's own controls are on screen. */
   #hero-yt-wrap iframe {
+    position: absolute;
+    inset: 0;
     width: 100%;
     height: 100%;
     border: 0;
+    opacity: 0;
+    transition: opacity 0.6s ease;
+  }
+  #hero-yt-wrap iframe.is-shown {
+    opacity: 1;
   }
 
   /* ---- Edition card (hackutd's glowing logo tile, rebuilt) ---- */
@@ -228,14 +249,30 @@ const label = `${featured.name} ${featured.edition}`;
 
 <script>
   /**
-   * Muted looping YouTube background via the official IFrame Player API.
-   * Mounts nothing under prefers-reduced-motion or Save-Data (the poster
-   * ground stands), and with JS off this whole block never runs.
+   * Muted looping YouTube background, controlled through the official IFrame
+   * Player API. Mounts nothing under prefers-reduced-motion or Save-Data (the
+   * poster ground stands), and with JS off this whole block never runs.
    *
-   * Cost control: the API is fetched only after the page has loaded, the
-   * player uses YouTube's privacy-enhanced (no-cookie) host, and it pauses
-   * whenever the hero is scrolled out of view, so it isn't decoding video
-   * and pulling data behind the rest of the page.
+   * SPEED: the embed iframe is created as soon as this script runs, with the
+   * API loading alongside it (the API attaches to the existing frame), so the
+   * player no longer waits for the whole page and then for the API. YouTube
+   * picks the stream quality from the player's size, so the frame is laid out
+   * ~720 device pixels tall and scaled up with CSS: behind the dark scrim it
+   * looks the same as 1080p, for a fraction of the bytes.
+   *
+   * THE LOOP: whenever playback starts or resumes (first play, a seek, a
+   * restart), YouTube's player draws a big play/pause button in its centre
+   * for about four seconds, even with controls=0, and there is no setting to
+   * turn it off. The first player fades in the moment it plays, so the video
+   * shows as early as possible and that button shows on first load. The loop
+   * never seeks: shortly before `endSeconds` a second player starts a few
+   * seconds before `startSeconds`, out of sight, plays until its button has
+   * gone (HIDE_MS), then the two crossfade and the old one is removed. So
+   * every loop after the first play is seamless, with no button.
+   *
+   * COST: when the hero scrolls out of view the players are removed outright,
+   * so nothing decodes or downloads behind the rest of the page; scrolling
+   * back starts a fresh one.
    */
   const wrap = document.getElementById('hero-yt-wrap');
   const saveData = (navigator as any).connection?.saveData === true;
@@ -245,23 +282,31 @@ const label = `${featured.name} ${featured.edition}`;
     const end = Number(wrap.dataset.ytEnd ?? 0);
     const section = wrap.closest('section')!;
 
-    // Oversize the 16:9 frame past the viewport so it covers like
+    /** How long YouTube keeps its centre play/pause button up after playback starts (measured ~4.4 s). */
+    const HIDE_MS = 5000;
+    /** Each player starts this much earlier, so it is at `start` when it fades in. */
+    const WARM_START = Math.max(0, Math.floor(start - HIDE_MS / 1000));
+    /** Seconds before `end` that the next player starts warming up (load + HIDE_MS). */
+    const PREP = 8.5;
+    /** Crossfade length (matches the CSS transition), and how far past `end` to wait for a late player. */
+    const FADE = 0.6;
+    const OVERRUN = 3;
+    const PLAYING = 1;
+    const ENDED = 0;
+
+    // Oversize the 16:9 frame past the section so it covers like
     // object-fit: cover, with margin to push YouTube's UI chrome offscreen.
     const OVERSCAN = 1.32;
+    // Lay the frame out this many DEVICE pixels tall, then scale it up.
+    const STREAM_HEIGHT = 720;
     const size = () => {
       const vw = section.clientWidth || window.innerWidth;
       const vh = section.clientHeight || window.innerHeight;
-      let w: number;
-      let h: number;
-      if (vw / vh > 16 / 9) {
-        w = vw;
-        h = (vw * 9) / 16;
-      } else {
-        h = vh;
-        w = (vh * 16) / 9;
-      }
-      wrap.style.width = `${Math.ceil(w * OVERSCAN)}px`;
-      wrap.style.height = `${Math.ceil(h * OVERSCAN)}px`;
+      const coverH = Math.max(vh, (vw * 9) / 16) * OVERSCAN;
+      const layoutH = Math.min(coverH, Math.max(240, STREAM_HEIGHT / (window.devicePixelRatio || 1)));
+      wrap.style.width = `${Math.ceil((layoutH * 16) / 9)}px`;
+      wrap.style.height = `${Math.ceil(layoutH)}px`;
+      wrap.style.scale = String(coverH / layoutH);
     };
     // Section size changes without a window resize too (font swap, mobile
     // address bar), so watch the section itself.
@@ -269,16 +314,129 @@ const label = `${featured.name} ${featured.edition}`;
     resizer.observe(section);
     wrap.classList.remove('hidden');
 
-    let player: any = null;
-    let inView = true;
-    const sync = () => {
-      if (!player?.playVideo) return;
-      if (inView) player.playVideo();
-      else player.pauseVideo();
+    const w = window as any;
+    const api = new Promise<any>((resolve, reject) => {
+      w.onYouTubeIframeAPIReady = () => resolve(w.YT);
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      tag.onerror = reject;
+      document.head.appendChild(tag);
+    });
+
+    /** eager: show as soon as it plays (first player). Otherwise show only once its button has gone. */
+    type Handle = {
+      frame: HTMLIFrameElement;
+      player: any;
+      state: number;
+      since: number;
+      eager: boolean;
+      shown: boolean;
+      dead: boolean;
     };
+    let current: Handle | null = null;
+    let next: Handle | null = null;
+    let ticker = 0;
+    let inView = true;
+    let retired = false;
+
+    const spawn = (eager: boolean): Handle => {
+      const params = new URLSearchParams({
+        autoplay: '1',
+        mute: '1',
+        controls: '0',
+        playsinline: '1',
+        rel: '0',
+        start: String(eager ? start : WARM_START),
+        disablekb: '1',
+        iv_load_policy: '3',
+        fs: '0',
+        modestbranding: '1',
+        enablejsapi: '1',
+        origin: location.origin,
+      });
+      const frame = document.createElement('iframe');
+      frame.src = `https://www.youtube-nocookie.com/embed/${videoId}?${params}`;
+      frame.allow = 'autoplay; encrypted-media';
+      frame.referrerPolicy = 'strict-origin-when-cross-origin';
+      frame.tabIndex = -1;
+      frame.title = 'Background video';
+      wrap.appendChild(frame);
+      const h: Handle = { frame, player: null, state: -1, since: 0, eager, shown: false, dead: false };
+      api.then((YT) => {
+        if (h.dead) return;
+        new YT.Player(frame, {
+          host: 'https://www.youtube-nocookie.com',
+          events: {
+            onReady: (e: any) => {
+              h.player = e.target;
+              // It may have started playing before the API attached.
+              h.state = e.target.getPlayerState();
+              h.since = performance.now();
+              if (h === current) reveal(h);
+            },
+            onStateChange: (e: any) => {
+              h.state = e.data;
+              if (e.data === PLAYING) h.since = performance.now();
+              // Don't wait for the next tick to show the first frames.
+              if (h === current) reveal(h);
+            },
+            // 100 = gone · 101/150 = embedding disallowed · 2/5 = player fault.
+            onError: retire,
+          },
+        });
+      }, retire);
+      return h;
+    };
+
+    /** Playing, and long enough that YouTube's centre button has hidden itself. */
+    const clean = (h: Handle | null) => !!h?.player && h.state === PLAYING && performance.now() - h.since >= HIDE_MS;
+
+    /** Fade a player in once it is ready to be seen. Once shown, it stays shown until it is removed. */
+    const reveal = (h: Handle | null) => {
+      if (!h || h.shown || !(h.eager ? h.player && h.state === PLAYING : clean(h))) return;
+      h.shown = true;
+      h.frame.classList.add('is-shown');
+    };
+
+    const kill = (h: Handle | null) => {
+      if (!h) return;
+      h.dead = true;
+      h.frame.classList.remove('is-shown');
+      window.setTimeout(() => h.frame.remove(), FADE * 1000 + 100);
+    };
+
+    const tick = () => {
+      if (!current) return;
+      reveal(current);
+      const t = current.player?.getCurrentTime?.() ?? 0;
+      if (!next && current.player && t >= end - PREP) next = spawn(false);
+      const due = t >= end - FADE || current.state === ENDED;
+      if (next && due && (clean(next) || t >= end + OVERRUN || current.state === ENDED)) {
+        // A next player that is late shows as soon as it plays, button or not, rather than leave the hero dark.
+        if (!clean(next)) next.eager = true;
+        kill(current);
+        current = next;
+        next = null;
+        reveal(current);
+      }
+    };
+
+    const play = () => {
+      if (current || retired) return;
+      current = spawn(true);
+      ticker = window.setInterval(tick, 250);
+    };
+    const stop = () => {
+      window.clearInterval(ticker);
+      kill(current);
+      kill(next);
+      current = next = null;
+    };
+
     const visibility = new IntersectionObserver(([entry]) => {
       inView = entry.isIntersecting;
-      sync();
+      if (inView) play();
+      else stop();
     });
     visibility.observe(section);
 
@@ -286,69 +444,24 @@ const label = `${featured.name} ${featured.edition}`;
      * RESILIENCE: if the video is removed, made private, region-locked, or has
      * embedding switched off, the iframe renders YouTube's own "Video
      * unavailable" card — which would sit behind the hero copy. Retire the
-     * frame instead so the designed near-black poster ground stands, exactly
+     * players instead so the designed near-black poster ground stands, exactly
      * as it does with JS off or under reduced motion.
      *
-     * Driven by onError ONLY — never by a "hasn't played yet" timer. A muted
-     * autoplay legitimately sits at UNSTARTED for a long stretch (backgrounded
-     * tab, slow connection, deferred autoplay), and no timer can tell that
-     * apart from a dead video; guessing there strips a working hero. YouTube's
-     * own error codes say plainly when it is actually gone.
+     * Driven by onError (or the API failing to load) ONLY — never by a "hasn't
+     * played yet" timer. A muted autoplay legitimately sits at UNSTARTED for a
+     * long stretch (backgrounded tab, slow connection, deferred autoplay), and
+     * no timer can tell that apart from a dead video. Players are invisible
+     * until they play, so a slow one costs nothing on screen.
      */
-    const retire = () => {
+    function retire() {
+      if (retired) return;
+      retired = true;
+      stop();
       resizer.disconnect();
       visibility.disconnect();
-      player = null;
-      wrap.remove();
-    };
+      wrap!.remove();
+    }
 
-    const w = window as any;
-    w.onYouTubeIframeAPIReady = () => {
-      new w.YT.Player('hero-yt-frame', {
-        host: 'https://www.youtube-nocookie.com',
-        width: '100%',
-        height: '100%',
-        videoId,
-        playerVars: {
-          autoplay: 1,
-          mute: 1,
-          controls: 0,
-          playsinline: 1,
-          rel: 0,
-          start,
-          end,
-          modestbranding: 1,
-          disablekb: 1,
-          iv_load_policy: 3,
-          fs: 0,
-        },
-        events: {
-          onReady: (e: any) => {
-            player = e.target;
-            player.mute();
-            sync();
-          },
-          onStateChange: (e: any) => {
-            // Manual segment loop: `end` fires ENDED → seek back to `start`.
-            if (e.data === w.YT.PlayerState.ENDED) {
-              e.target.seekTo(start, true);
-              if (inView) e.target.playVideo();
-            }
-          },
-          // 100 = gone · 101/150 = embedding disallowed · 2/5 = player fault.
-          onError: retire,
-        },
-      });
-    };
-
-    // Fetch the API only once the page itself has finished loading.
-    const inject = () => {
-      const tag = document.createElement('script');
-      tag.src = 'https://www.youtube.com/iframe_api';
-      tag.onerror = retire;
-      document.head.appendChild(tag);
-    };
-    if (document.readyState === 'complete') inject();
-    else window.addEventListener('load', inject, { once: true });
+    if (inView) play();
   }
 </script>

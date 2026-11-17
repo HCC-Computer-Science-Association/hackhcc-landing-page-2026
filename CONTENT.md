@@ -119,6 +119,17 @@ a backdrop sitting behind a 55% scrim (`--crf` defaults to 30). Budget is
 ~2 MB; the script warns if you blow it. A 4K source with audio typically
 lands well under 1 MB.
 
+**The pause button (YouTube embed only).** Without a `public/hero.mp4`, the
+hero falls back to the YouTube embed. YouTube's player draws a big play/pause button in its
+centre for about four seconds every time playback starts or resumes, even
+with controls off, and no embed setting removes it. The video fades in the
+moment it starts playing (about 2 s after the page opens on a good 4G
+connection), so that button shows for its first few seconds on page load;
+that was chosen over a later, clean fade-in. Loops never show it: shortly
+before `endSeconds`, `Hero.astro` starts a second player out of sight, lets
+it play until the button has gone, and crossfades to it. A self-hosted
+`hero.mp4` has no player UI at all.
+
 With reduced motion or no JS the hero shows a plain dark poster — that's
 intentional. So does a YouTube video that has been removed, blocked, or had
 embedding switched off: `Hero.astro` listens for the player's `onError` and
